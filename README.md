@@ -10,46 +10,6 @@ A comprehensive web application for naval combat modeling using various implemen
 - **Multiple Forces Salvo**: Extension to handle multiple combatant forces
 - **Monte Carlo Simulation**: Advanced model with multi-domain combat (air, naval, submarine)
 
-
-
-## 📐 Mathematical Models
-
-The Monte Carlo simulation used in this project is based on the following mathematical formulations:
-
-
-% 1. Firepower Generation (Poisson-distributed shots per unit)
-$$
-S_{i}^{(d)} \sim \text{Poisson}(\lambda_{i}^{(d)})
-$$
-
-% 2. Probability of Hit and Interception
-$$
-H_{i \rightarrow j}^{(d_k \rightarrow d_l)} \sim \text{Binomial}\left(S_{i}^{(d_k)},\; p_{\text{hit},\,i}^{(d_k \rightarrow d_l)} \cdot (1 - p_{\text{int},\,j})\right)
-$$
-
-% 3. Unit Loss Update
-$$
-U_j^{(d_l)}(t+1) = \max\left(0,\; U_j^{(d_l)}(t) - \sum_{d_k} H_{i \rightarrow j}^{(d_k \rightarrow d_l)} \right)
-$$
-
-% 4. Reinforcement Probability (Adaptive)
-$$
-P_{\text{reinforce},\,i}^{(d)} = \min\left(0.02 + 0.1 \cdot \left(1 - \frac{\sum_d U_i^{(d)}(t)}{\sum_d U_i^{(d)}(0)}\right),\; 1.0\right)
-$$
-
-% 5. Morale Collapse Check
-$$
-\text{If } \frac{\sum_d U_i^{(d)}(t)}{\sum_d U_i^{(d)}(0)} < \theta_{\text{morale}}, \text{ then side } i \text{ collapses with probability } p_{\text{collapse}}
-$$
-
-% 6. Simulation Looping (Monte Carlo)
-$$
-\text{Repeat for each simulation } s = 1, 2, \dots, N_{\text{sim}} \text{ and each round } t = 1, 2, \dots, T_{\text{max}}
-$$
-
-These equations form the backbone of the probabilistic, dynamic, and multi-domain combat engine used in the simulator.
-
-
 ## Installation
 
 1. Clone this repository:
