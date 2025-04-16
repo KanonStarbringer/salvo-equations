@@ -87,5 +87,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Contact
 
 For questions and feedback, please contact:
-- Email: your.email@example.com
-- GitHub: [your-github-username](https://github.com/your-github-username) 
+- Email: tpires@id.uff.br or tullio.mozart@marinha.mil.br
+- GitHub: [KanonStarbringer](https://github.com/KanonStarbringer) 
