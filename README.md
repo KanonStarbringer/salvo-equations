@@ -67,6 +67,21 @@ Let:
 * $$C_x$$: defensive capacity (saturation threshold) of Blue
 * $$C_y$$: defensive capacity of Red
 * $$D(\cdot, \cdot)$$: nonlinear damage function (models saturation effects)
+
+Then the equations are:
+
+```math
+\begin{aligned}
+\text{Attack on Red:} \quad & A_y = f_x \cdot x_n \cdot (1 - q_y) \\
+\text{Attack on Blue:} \quad & A_x = f_y \cdot y_n \cdot (1 - q_x) \\
+\\
+\text{Damage to Red:} \quad & d_y = D(A_y, C_y) \\
+\text{Damage to Blue:} \quad & d_x = D(A_x, C_x) \\
+\\
+\text{Update Blue force:} \quad & x_{n+1} = \max(0, x_n - d_x) \\
+\text{Update Red force:} \quad & y_{n+1} = \max(0, y_n - d_y)
+\end{aligned}
+```
  
 - Simulates combat between two forces
 - Parameters include initial forces, firepower, and interception capabilities
