@@ -58,15 +58,15 @@ The application will open in your default web browser at `http://localhost:8501`
 Let
 
 Let:
-	•	$$x_n$$: fraction of Blue force at time step n
-	•	$$y_n$$: fraction of Red force at time step n
-	•	$$f_x$$: firepower per unit of Blue
-	•	$$f_y$$: firepower per unit of Red
-	•	$$q_x$$: fraction of Red’s incoming fire intercepted by Blue
-	•	$$q_y$$: fraction of Blue’s incoming fire intercepted by Red
-	•	$$C_x$$: defensive capacity (saturation threshold) of Blue
-	•	$$C_y$$: defensive capacity of Red
-	•	$$D(\cdot, \cdot)$$: nonlinear damage function (models saturation effects)
+* $$x_n$$: fraction of Blue force at time step n
+* $$y_n$$: fraction of Red force at time step n
+* $$f_x$$: firepower per unit of Blue
+* $$f_y$$: firepower per unit of Red
+* $$q_x$$: fraction of Red’s incoming fire intercepted by Blue
+* $$q_y$$: fraction of Blue’s incoming fire intercepted by Red
+* $$C_x$$: defensive capacity (saturation threshold) of Blue
+* $$C_y$$: defensive capacity of Red
+* $$D(\cdot, \cdot)$$: nonlinear damage function (models saturation effects)
  
 - Simulates combat between two forces
 - Parameters include initial forces, firepower, and interception capabilities
