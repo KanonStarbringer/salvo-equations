@@ -58,23 +58,17 @@ The application will open in your default web browser at `http://localhost:8501`
 Let
 
 ```math
-- x_n: \text{fraction of Blue force at time step n}
-
-- y_n: \text{fraction of Red force at time step n}
-
-- f_x: \text{firepower per unit of Blue}
-
-- f_y: \text{firepower per unit of Red}
-
-- q_x: \text{fraction of Red’s incoming fire intercepted by Blue}
-
-- q_y: \text{fraction of Blue’s incoming fire intercepted by Red}
-
-- C_x: \text{defensive capacity (saturation threshold) of Blue}
-
-- C_y: text{defensive capacity of Red}
-
-- D(\cdot, \cdot): \text{nonlinear damage function (models saturation effects)}
+\begin{itemize}
+  \item x_n: \text{fraction of Blue force at time step n}
+  \item y_n: \text{fraction of Red force at time step n}
+  \item f_x: \text{firepower per unit of Blue}
+  \item f_y: \text{firepower per unit of Red}
+  \item q_x: \text{fraction of Red’s incoming fire intercepted by Blue}
+  \item q_y: \text{fraction of Blue’s incoming fire intercepted by Red}
+  \item C_x: \text{defensive capacity (saturation threshold) of Blue}
+  \item C_y: text{defensive capacity of Red}
+  \item D(\cdot, \cdot): \text{nonlinear damage function (models saturation effects)}
+\end{itemize}
 ```
 - Simulates combat between two forces
 - Parameters include initial forces, firepower, and interception capabilities
