@@ -55,8 +55,6 @@ The application will open in your default web browser at `http://salvo-equations
 
 ### Basic Salvo Model
 
-Let
-
 Let:
 * $$x_n$$: fraction of Blue force at time step n
 * $$y_n$$: fraction of Red force at time step n
