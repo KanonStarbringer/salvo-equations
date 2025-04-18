@@ -59,13 +59,21 @@ Let
 
 ```math
 - x_n: \text{fraction of Blue force at time step n}
+
 - y_n: \text{fraction of Red force at time step n}
+
 - f_x: \text{firepower per unit of Blue}
+
 - f_y: \text{firepower per unit of Red}
+
 - q_x: \text{fraction of Red’s incoming fire intercepted by Blue}
+
 - q_y: \text{fraction of Blue’s incoming fire intercepted by Red}
+
 - C_x: \text{defensive capacity (saturation threshold) of Blue}
+
 - C_y: text{defensive capacity of Red}
+
 - D(\cdot, \cdot): \text{nonlinear damage function (models saturation effects)}
 ```
 - Simulates combat between two forces
