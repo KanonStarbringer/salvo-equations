@@ -146,10 +146,12 @@ P_{\text{reinforce},\,i}^{(d)} = \min\left(0.02 + 0.1 \cdot \left(1 - \frac{\sum
 $$
 
 ### 5. Morale Collapse Condition
-If 
+If
+
 $$
 \frac{\sum_d U_i^{(d)}(t)}{\sum_d U_i^{(d)}(0)} < \theta_{\text{morale}},
 $$
+
 then side $i$ may collapse with probability $p_{\text{collapse}}$.
 
 ### 6. Monte Carlo Simulation Loop
