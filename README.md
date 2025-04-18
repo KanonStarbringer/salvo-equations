@@ -87,6 +87,9 @@ Then the equations are:
 ### Continuous-Time Salvo
 ```math
 \frac{dx}{dt} = - f_y \cdot y(t) \cdot (1 - q_x)
+```
+
+```math
 \frac{dy}{dt} = - f_x \cdot x(t) \cdot (1 - q_y)
 ```
 
