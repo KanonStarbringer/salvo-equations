@@ -54,20 +54,34 @@ The application will open in your default web browser at `http://localhost:8501`
 ## Models
 
 ### Basic Salvo Model
+
+Let
+
 ```math
-\begin{align*}
-\frac{dx}{dt} &= -f_y \cdot y(t) \cdot (1 - q_x) \\
-\frac{dy}{dt} &= -f_x \cdot x(t) \cdot (1 - q_y)
-\end{align*}
+- x_n: \text{fraction of Blue force at time step n}
+- y_n: \text{fraction of Red force at time step n}
+- f_x: \text{firepower per unit of Blue}
+- f_y: \text{firepower per unit of Red}
+- q_x: \text{fraction of Red’s incoming fire intercepted by Blue}
+- q_y: \text{fraction of Blue’s incoming fire intercepted by Red}
+- C_x: \text{defensive capacity (saturation threshold) of Blue}
+- C_y: text{defensive capacity of Red}
+- D(\cdot, \cdot): \text{nonlinear damage function (models saturation effects)}
 ```
 - Simulates combat between two forces
 - Parameters include initial forces, firepower, and interception capabilities
 
 ### Continuous-Time Salvo
+```math
+
+```
 - Uses differential equations for continuous combat simulation
 - Provides smooth force evolution over time
 
 ### Stochastic Salvo
+```math
+
+```
 - Adds Gaussian noise to damage calculations
 - Accounts for uncertainty in combat outcomes
 
