@@ -54,6 +54,12 @@ The application will open in your default web browser at `http://localhost:8501`
 ## Models
 
 ### Basic Salvo Model
+```math
+\begin{align*}
+\frac{dx}{dt} &= -f_y \cdot y(t) \cdot (1 - q_x) \\
+\frac{dy}{dt} &= -f_x \cdot x(t) \cdot (1 - q_y)
+\end{align*}
+```
 - Simulates combat between two forces
 - Parameters include initial forces, firepower, and interception capabilities
 
