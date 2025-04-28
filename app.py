@@ -373,36 +373,26 @@ def main():
             return dx, dy
 
         def continuous_salvo(t, z, fx, fy, qx, qy):
-            """Calculate the derivatives for the continuous-time salvo model."""
             x, y = z
-            dxdt = -fy * y * (1 - qx)
-            dydt = -fx * x * (1 - qy)
+            # Garante que as forças não fiquem negativas
+            x = max(0, x)
+            y = max(0, y)
+            dxdt = -fy * y * (1 - qx) if x > 0 else 0
+            dydt = -fx * x * (1 - qy) if y > 0 else 0
             return [dxdt, dydt]
 
-        def run_salvo_simulation(fx, fy, qx, qy, steps=10):
-            """Run the discrete-time salvo equations simulation."""
-            x = [1.0]
-            y = [1.0]
-            
-            for _ in range(steps):
-                dx, dy = salvo_equations(x[-1], y[-1], fx, fy, qx, qy)
-                x.append(max(0, x[-1] + dx))
-                y.append(max(0, y[-1] + dy))
-            
-            return x, y
-
-        def run_continuous_simulation(fx, fy, qx, qy, t_span=(0, 10), t_eval=None):
-            """Run the continuous-time salvo model simulation."""
+        def run_continuous_simulation(x0, y0, fx, fy, qx, qy, t_span=(0, 10), t_eval=None):
             if t_eval is None:
                 t_eval = np.linspace(t_span[0], t_span[1], 200)
-            
-            z0 = [1.0, 1.0]  # Initial conditions
+            z0 = [x0, y0]  # Usa os valores iniciais dos sliders
             sol = solve_ivp(continuous_salvo, t_span, z0, args=(fx, fy, qx, qy), t_eval=t_eval)
-            return sol.t, sol.y[0], sol.y[1]
+            # Garante que as forças não fiquem negativas
+            x = np.maximum(sol.y[0], 0)
+            y = np.maximum(sol.y[1], 0)
+            return sol.t, x, y
 
         if st.button("Run Simulation"):
-            t, x, y = run_continuous_simulation(fx, fy, qx, qy, t_span=(0, t_max))
-            
+            t, x, y = run_continuous_simulation(x0, y0, fx, fy, qx, qy, t_span=(0, t_max))
             fig, ax = plt.subplots(figsize=(10, 6))
             ax.plot(t, x, label="Blue Force", linewidth=2)
             ax.plot(t, y, label="Red Force", linewidth=2)
@@ -411,10 +401,7 @@ def main():
             ax.set_ylabel("Fraction of Force Remaining")
             ax.grid(True)
             ax.legend()
-            
             st.pyplot(fig)
-            
-            # Display final results
             st.subheader("Final Results")
             col1, col2 = st.columns(2)
             with col1:
