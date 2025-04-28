@@ -51,7 +51,7 @@ def main():
         # Navigation options
         page = st.selectbox(
             "Select a Model",
-            ["Home", "Salvo Equations", "Continuous-Time Salvo", "Multiple Forces Salvo", "Stochastic Salvo", "Monte Carlo", "About"]
+            ["Home", "Salvo Equations", "Classical Model - Nonlinear damage", "Continuous-Time Salvo", "Multiple Forces Salvo", "Stochastic Salvo", "Monte Carlo", "About"]
         )
 
     # Main content
@@ -65,93 +65,143 @@ def main():
         Use the sidebar to navigate between different models and learn more about the simulations.
         """)
 
-    elif page == "Salvo Equations":
-        st.title("Salvo Equations Model")
-        
-        # Model description
+    elif page == "Classical Model - Nonlinear damage":
+        st.title("Classical Model - Nonlinear Damage")
         st.write("""
-        The Salvo Equations model simulates combat between two forces (Blue and Red) with the following components:
-        
-        - Initial forces (x₀, y₀): Fractions of Blue and Red forces (0-1)
-        - Firepower (fₓ, fᵧ): Firepower per unit of Blue and Red forces
-        - Interceptors (qₓ, qᵧ): Fraction of enemy fire intercepted by Blue and Red
-        - Defense capacity (Cₓ, Cᵧ): Maximum fraction of enemy fire that can be absorbed before saturation
+        This model simulates combat between two forces (Blue and Red) using nonlinear (saturation) damage.
         """)
-        
-        # Input parameters
         col1, col2 = st.columns(2)
-        
         with col1:
             st.subheader("Blue Force Parameters")
             x0 = st.slider("Initial Blue Force (x₀)", 0.0, 1.0, 1.0, 0.1)
             fx = st.slider("Blue Firepower (fₓ)", 0.0, 1.0, 0.6, 0.1)
             qx = st.slider("Blue Interceptors (qₓ)", 0.0, 1.0, 0.4, 0.1)
             cx = st.slider("Blue Defense Capacity (Cₓ)", 0.0, 1.0, 0.5, 0.1)
-        
         with col2:
             st.subheader("Red Force Parameters")
             y0 = st.slider("Initial Red Force (y₀)", 0.0, 1.0, 1.0, 0.1)
             fy = st.slider("Red Firepower (fᵧ)", 0.0, 1.0, 0.5, 0.1)
             qy = st.slider("Red Interceptors (qᵧ)", 0.0, 1.0, 0.3, 0.1)
             cy = st.slider("Red Defense Capacity (Cᵧ)", 0.0, 1.0, 0.6, 0.1)
-        
-        # Simulation parameters
         st.subheader("Simulation Parameters")
         rounds = st.slider("Number of Rounds", 10, 100, 50, 10)
-        
-        # Nonlinear damage function
+        fire_mode = st.radio("Fire Order", ["Simultaneous", "Blue fires first", "Red fires first"])
         def nonlinear_damage(incoming, capacity):
             if incoming <= capacity:
                 return incoming
             else:
                 return capacity + (incoming - capacity)**1.5
-        
-        # Run simulation
-        if st.button("Run Simulation"):
-            # Initialize forces
+        if st.button("Run Simulation", key="run_nonlinear"):
             x = [x0]
             y = [y0]
-            
-            # Simulate
             for n in range(rounds):
-                # Calculate attacks
-                attack_on_y = fx * x[-1] * (1 - qy)
-                attack_on_x = fy * y[-1] * (1 - qx)
-                
-                # Apply damage
-                damage_to_y = nonlinear_damage(attack_on_y, cy)
-                damage_to_x = nonlinear_damage(attack_on_x, cx)
-                
-                # Update forces
-                new_x = max(0, x[-1] - damage_to_x)
-                new_y = max(0, y[-1] - damage_to_y)
-                
+                if fire_mode == "Simultaneous":
+                    attack_on_y = fx * x[-1] * (1 - qy)
+                    attack_on_x = fy * y[-1] * (1 - qx)
+                    damage_to_y = nonlinear_damage(attack_on_y, cy)
+                    damage_to_x = nonlinear_damage(attack_on_x, cx)
+                    new_x = max(0, x[-1] - damage_to_x)
+                    new_y = max(0, y[-1] - damage_to_y)
+                elif fire_mode == "Blue fires first":
+                    # Blue attacks Red
+                    attack_on_y = fx * x[-1] * (1 - qy)
+                    damage_to_y = nonlinear_damage(attack_on_y, cy)
+                    temp_y = max(0, y[-1] - damage_to_y)
+                    # Red attacks Blue with reduced force
+                    attack_on_x = fy * temp_y * (1 - qx)
+                    damage_to_x = nonlinear_damage(attack_on_x, cx)
+                    new_x = max(0, x[-1] - damage_to_x)
+                    new_y = temp_y
+                else:  # Red fires first
+                    attack_on_x = fy * y[-1] * (1 - qx)
+                    damage_to_x = nonlinear_damage(attack_on_x, cx)
+                    temp_x = max(0, x[-1] - damage_to_x)
+                    attack_on_y = fx * temp_x * (1 - qy)
+                    damage_to_y = nonlinear_damage(attack_on_y, cy)
+                    new_y = max(0, y[-1] - damage_to_y)
+                    new_x = temp_x
                 x.append(new_x)
                 y.append(new_y)
-                
-                # Stop if one force is eliminated
                 if new_x == 0 or new_y == 0:
                     break
-            
-            # Plot results
             fig, ax = plt.subplots(figsize=(10, 6))
             ax.plot(x, label='Blue Force', linewidth=2)
             ax.plot(y, label='Red Force', linewidth=2)
-            ax.set_title("Salvo Equations Simulation Results")
+            ax.set_title("Results - Classical Model with Nonlinear Damage")
             ax.set_xlabel("Round")
             ax.set_ylabel("Fraction of Force Remaining")
             ax.grid(True)
             ax.legend()
-            
             st.pyplot(fig)
-            
-            # Display final results
             st.subheader("Final Results")
             col1, col2 = st.columns(2)
             with col1:
                 st.metric("Final Blue Force", f"{x[-1]:.3f}")
             with col2:
                 st.metric("Final Red Force", f"{y[-1]:.3f}")
+
+    elif page == "Salvo Equations":
+        st.title("Salvo Equations Model (Hughes)")
+        st.write("""
+        This model implements the Salvo Equations as described by Hughes:
+        """)
+        st.latex(r"\Delta B = \frac{\alpha A - b_3 B}{b_1}, \quad \Delta A = \frac{\beta B - a_3 A}{a_1}")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Force A (blue) initial parameters")
+            A0 = st.number_input("A initial units", 0.0, 1000.0, 20.0, 1.0)
+            alpha = st.number_input("A well aimed missiles (α)", 0.0, 1000.0, 10.0, 1.0)
+            a1 = st.number_input("Necessary hits to destroy 1 A (a₁)", 0.1, 1000.0, 2.0, 0.1)
+            a3 = st.number_input("Missiles destroyed by each A (a₃)", 0.0, 1000.0, 1.0, 1.0)
+        with col2:
+            st.subheader("Force B (red) initial parameters")
+            B0 = st.number_input("B initial units", 0.0, 1000.0, 20.0, 1.0)
+            beta = st.number_input("B well aimed missiles (β)", 0.0, 1000.0, 10.0, 1.0)
+            b1 = st.number_input("Necessary hits to destroy 1 B (b₁)", 0.1, 1000.0, 2.0, 0.1)
+            b3 = st.number_input("Missiles destroyed by each B (b₃)", 0.0, 1000.0, 1.0, 1.0)
+        st.subheader("Simulation Parameters")
+        rounds = st.slider("Number or rounds", 1, 100, 20, 1)
+        fire_mode = st.radio("Fire Order", ["Simultaneous", "Blue fires first", "Red fires first"])
+        if st.button("Run Sim", key="run_hughes"):
+            A = [A0]
+            B = [B0]
+            for n in range(rounds):
+                if fire_mode == "Simultaneous":
+                    delta_B = max(0, (alpha * A[-1] - b3 * B[-1]) / b1)
+                    delta_A = max(0, (beta * B[-1] - a3 * A[-1]) / a1)
+                    new_A = max(0, A[-1] - delta_A)
+                    new_B = max(0, B[-1] - delta_B)
+                elif fire_mode == "Blue fires first":
+                    delta_B = max(0, (alpha * A[-1] - b3 * B[-1]) / b1)
+                    temp_B = max(0, B[-1] - delta_B)
+                    delta_A = max(0, (beta * temp_B - a3 * A[-1]) / a1)
+                    new_A = max(0, A[-1] - delta_A)
+                    new_B = temp_B
+                else:  # Red fires first
+                    delta_A = max(0, (beta * B[-1] - a3 * A[-1]) / a1)
+                    temp_A = max(0, A[-1] - delta_A)
+                    delta_B = max(0, (alpha * temp_A - b3 * B[-1]) / b1)
+                    new_B = max(0, B[-1] - delta_B)
+                    new_A = temp_A
+                A.append(new_A)
+                B.append(new_B)
+                if new_A <= 0 or new_B <= 0:
+                    break
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.plot(A, label='Force A (blue)', linewidth=2)
+            ax.plot(B, label='Force B (red)', linewidth=2)
+            ax.set_title("Results - Salvo Equations (Hughes)")
+            ax.set_xlabel("Round")
+            ax.set_ylabel("Remaining Units")
+            ax.grid(True)
+            ax.legend()
+            st.pyplot(fig)
+            st.subheader("Final Score")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Force A remaining (blue)", f"{A[-1]:.2f}")
+            with col2:
+                st.metric("Force B  remaining (red)", f"{B[-1]:.2f}")
 
     elif page == "Multiple Forces Salvo":
         st.title("Multiple Forces Salvo Model")
