@@ -277,6 +277,7 @@ def main():
         # Simulation parameters
         st.subheader("Simulation Parameters")
         rounds = st.slider("Number of Rounds", 10, 100, 30, 10)
+        fire_mode = st.radio("Fire Order", ["Simultaneous", "Blue fires first", "Red fires first"])
         
         if st.button("Run Simulation"):
             # Initialize forces
@@ -305,21 +306,58 @@ def main():
                 if x.sum() == 0 or y.sum() == 0:
                     break
                 
-                # Calculate damage from Blue to Red
-                damage_to_y = np.zeros(3)
-                for i in range(3):
-                    for j in range(3):
-                        damage_to_y[j] += F_x[i][j] * x[i] * (1 - q_y)
-                
-                # Calculate damage from Red to Blue
-                damage_to_x = np.zeros(3)
-                for i in range(3):
-                    for j in range(3):
-                        damage_to_x[j] += F_y[i][j] * y[i] * (1 - q_x)
-                
-                # Update forces
-                x = np.maximum(0, x - damage_to_x)
-                y = np.maximum(0, y - damage_to_y)
+                if fire_mode == "Simultaneous":
+                    # Calculate damage from Blue to Red
+                    damage_to_y = np.zeros(3)
+                    for i in range(3):
+                        for j in range(3):
+                            damage_to_y[j] += F_x[i][j] * x[i] * (1 - q_y)
+                    
+                    # Calculate damage from Red to Blue
+                    damage_to_x = np.zeros(3)
+                    for i in range(3):
+                        for j in range(3):
+                            damage_to_x[j] += F_y[i][j] * y[i] * (1 - q_x)
+                    
+                    # Update forces
+                    x = np.maximum(0, x - damage_to_x)
+                    y = np.maximum(0, y - damage_to_y)
+                    
+                elif fire_mode == "Blue fires first":
+                    # Blue attacks Red first
+                    damage_to_y = np.zeros(3)
+                    for i in range(3):
+                        for j in range(3):
+                            damage_to_y[j] += F_x[i][j] * x[i] * (1 - q_y)
+                    
+                    temp_y = np.maximum(0, y - damage_to_y)
+                    
+                    # Red attacks Blue with reduced force
+                    damage_to_x = np.zeros(3)
+                    for i in range(3):
+                        for j in range(3):
+                            damage_to_x[j] += F_y[i][j] * temp_y[i] * (1 - q_x)
+                    
+                    x = np.maximum(0, x - damage_to_x)
+                    y = temp_y
+                    
+                else:  # Red fires first
+                    # Red attacks Blue first
+                    damage_to_x = np.zeros(3)
+                    for i in range(3):
+                        for j in range(3):
+                            damage_to_x[j] += F_y[i][j] * y[i] * (1 - q_x)
+                    
+                    temp_x = np.maximum(0, x - damage_to_x)
+                    
+                    # Blue attacks Red with reduced force
+                    damage_to_y = np.zeros(3)
+                    for i in range(3):
+                        for j in range(3):
+                            damage_to_y[j] += F_x[i][j] * temp_x[i] * (1 - q_y)
+                    
+                    x = temp_x
+                    y = np.maximum(0, y - damage_to_y)
                 
                 x_history.append(x.copy())
                 y_history.append(y.copy())
@@ -415,34 +453,46 @@ def main():
         # Simulation parameters
         st.subheader("Simulation Parameters")
         t_max = st.slider("Maximum Simulation Time", 1.0, 20.0, 10.0)
-        
-        def salvo_equations(x, y, fx, fy, qx, qy):
-            """Calculate the next state of the salvo equations model."""
-            dx = -fy * y * (1 - qx)
-            dy = -fx * x * (1 - qy)
-            return dx, dy
+        fire_mode = st.radio("Fire Order", ["Simultaneous", "Blue fires first", "Red fires first"])
 
-        def continuous_salvo(t, z, fx, fy, qx, qy):
+        def continuous_salvo(t, z, fx, fy, qx, qy, fire_mode="Simultaneous"):
             x, y = z
             # Garante que as forças não fiquem negativas
             x = max(0, x)
             y = max(0, y)
-            dxdt = -fy * y * (1 - qx) if x > 0 else 0
-            dydt = -fx * x * (1 - qy) if y > 0 else 0
+            
+            if fire_mode == "Simultaneous":
+                dxdt = -fy * y * (1 - qx) if x > 0 else 0
+                dydt = -fx * x * (1 - qy) if y > 0 else 0
+            elif fire_mode == "Blue fires first":
+                dxdt = -fy * y * (1 - qx) if x > 0 else 0
+                dydt = -fx * x * (1 - qy) if y > 0 else 0
+                # Ajusta o dano para considerar o ataque do azul primeiro
+                if x > 0:
+                    temp_y = max(0, y - fx * x * (1 - qy) * t)
+                    dydt = -fx * x * (1 - qy) if temp_y > 0 else 0
+            else:  # Red fires first
+                dxdt = -fy * y * (1 - qx) if x > 0 else 0
+                dydt = -fx * x * (1 - qy) if y > 0 else 0
+                # Ajusta o dano para considerar o ataque do vermelho primeiro
+                if y > 0:
+                    temp_x = max(0, x - fy * y * (1 - qx) * t)
+                    dxdt = -fy * y * (1 - qx) if temp_x > 0 else 0
+            
             return [dxdt, dydt]
 
-        def run_continuous_simulation(x0, y0, fx, fy, qx, qy, t_span=(0, 10), t_eval=None):
+        def run_continuous_simulation(x0, y0, fx, fy, qx, qy, t_span=(0, 10), t_eval=None, fire_mode="Simultaneous"):
             if t_eval is None:
                 t_eval = np.linspace(t_span[0], t_span[1], 200)
             z0 = [x0, y0]  # Usa os valores iniciais dos sliders
-            sol = solve_ivp(continuous_salvo, t_span, z0, args=(fx, fy, qx, qy), t_eval=t_eval)
+            sol = solve_ivp(continuous_salvo, t_span, z0, args=(fx, fy, qx, qy, fire_mode), t_eval=t_eval)
             # Garante que as forças não fiquem negativas
             x = np.maximum(sol.y[0], 0)
             y = np.maximum(sol.y[1], 0)
             return sol.t, x, y
 
         if st.button("Run Simulation"):
-            t, x, y = run_continuous_simulation(x0, y0, fx, fy, qx, qy, t_span=(0, t_max))
+            t, x, y = run_continuous_simulation(x0, y0, fx, fy, qx, qy, t_span=(0, t_max), fire_mode=fire_mode)
             fig, ax = plt.subplots(figsize=(10, 6))
             ax.plot(t, x, label="Blue Force", linewidth=2)
             ax.plot(t, y, label="Red Force", linewidth=2)
@@ -497,6 +547,7 @@ def main():
         st.subheader("Simulation Parameters")
         rounds = st.slider("Number of Rounds", 10, 100, 50, 10)
         num_simulations = st.slider("Number of Simulations", 10, 1000, 100, 10)
+        fire_mode = st.radio("Fire Order", ["Simultaneous", "Blue fires first", "Red fires first"])
         
         # Run simulation
         if st.button("Run Simulation"):
@@ -508,6 +559,12 @@ def main():
             red_wins = 0
             draw = 0
             
+            # Track domain effectiveness
+            domain_effectiveness = {
+                'blue': {'air': 0, 'naval': 0, 'submarine': 0},
+                'red': {'air': 0, 'naval': 0, 'submarine': 0}
+            }
+            
             # Run multiple simulations
             for sim in range(num_simulations):
                 # Initialize forces
@@ -516,21 +573,50 @@ def main():
                 
                 # Simulate
                 for n in range(rounds):
-                    # Calculate attacks
-                    attack_on_y = fx * x[-1] * (1 - qy)
-                    attack_on_x = fy * y[-1] * (1 - qx)
-                    
-                    # Add Gaussian noise to damage
-                    noise_y = np.random.normal(0, sigma)
-                    noise_x = np.random.normal(0, sigma)
-                    
-                    # Apply damage with noise
-                    damage_to_y = max(0, attack_on_y + noise_y)
-                    damage_to_x = max(0, attack_on_x + noise_x)
-                    
-                    # Update forces
-                    new_x = max(0, x[-1] - damage_to_x)
-                    new_y = max(0, y[-1] - damage_to_y)
+                    if fire_mode == "Simultaneous":
+                        # Calculate attacks
+                        attack_on_y = fx * x[-1] * (1 - qy)
+                        attack_on_x = fy * y[-1] * (1 - qx)
+                        
+                        # Add Gaussian noise to damage
+                        noise_y = np.random.normal(0, sigma)
+                        noise_x = np.random.normal(0, sigma)
+                        
+                        # Apply damage with noise
+                        damage_to_y = max(0, attack_on_y + noise_y)
+                        damage_to_x = max(0, attack_on_x + noise_x)
+                        
+                        # Update forces
+                        new_x = max(0, x[-1] - damage_to_x)
+                        new_y = max(0, y[-1] - damage_to_y)
+                        
+                    elif fire_mode == "Blue fires first":
+                        # Blue attacks Red first
+                        attack_on_y = fx * x[-1] * (1 - qy)
+                        noise_y = np.random.normal(0, sigma)
+                        damage_to_y = max(0, attack_on_y + noise_y)
+                        temp_y = max(0, y[-1] - damage_to_y)
+                        
+                        # Red attacks Blue with reduced force
+                        attack_on_x = fy * temp_y * (1 - qx)
+                        noise_x = np.random.normal(0, sigma)
+                        damage_to_x = max(0, attack_on_x + noise_x)
+                        new_x = max(0, x[-1] - damage_to_x)
+                        new_y = temp_y
+                        
+                    else:  # Red fires first
+                        # Red attacks Blue first
+                        attack_on_x = fy * y[-1] * (1 - qx)
+                        noise_x = np.random.normal(0, sigma)
+                        damage_to_x = max(0, attack_on_x + noise_x)
+                        temp_x = max(0, x[-1] - damage_to_x)
+                        
+                        # Blue attacks Red with reduced force
+                        attack_on_y = fx * temp_x * (1 - qy)
+                        noise_y = np.random.normal(0, sigma)
+                        damage_to_y = max(0, attack_on_y + noise_y)
+                        new_y = max(0, y[-1] - damage_to_y)
+                        new_x = temp_x
                     
                     x.append(new_x)
                     y.append(new_y)
@@ -937,6 +1023,8 @@ def main():
                     0.1
                 )
         
+        fire_mode = st.radio("Fire Order", ["Simultaneous", "Blue fires first", "Red fires first"])
+
         # Run simulation
         if st.button("Run Simulation"):
             # Initialize arrays for storing results
@@ -980,37 +1068,79 @@ def main():
                     blue_shots = np.random.poisson(avg_shots_blue * blue)
                     red_shots = np.random.poisson(avg_shots_red * red)
                     
-                    # Calculate hits (Binomial distribution)
-                    blue_hits = np.zeros_like(blue)
-                    red_hits = np.zeros_like(red)
-                    
-                    for i in range(3):  # Attacker domain
-                        for j in range(3):  # Defender domain
-                            if blue[i] > 0:
-                                p_hit = p_hit_blue[i,j] * (1 - p_int_red)
-                                hits = np.random.binomial(blue_shots[i], p_hit)
-                                blue_hits[j] += hits
-                                blue_hits_by_domain[i,j] += hits
-                            if red[i] > 0:
-                                p_hit = p_hit_red[i,j] * (1 - p_int_blue)
-                                hits = np.random.binomial(red_shots[i], p_hit)
-                                red_hits[j] += hits
-                                red_hits_by_domain[i,j] += hits
-                    
-                    # Update forces
-                    blue = np.maximum(0, blue - red_hits)
-                    red = np.maximum(0, red - blue_hits)
-                    
-                    # Reinforcement
-                    for i in range(3):
-                        if blue[i] > 0:
-                            p_reinforce = min(0.02 + 0.1 * (1 - np.sum(blue)/np.sum(blue_initial)), 1.0)
-                            if np.random.random() < p_reinforce:
-                                blue[i] += 1
-                        if red[i] > 0:
-                            p_reinforce = min(0.02 + 0.1 * (1 - np.sum(red)/np.sum(red_initial)), 1.0)
-                            if np.random.random() < p_reinforce:
-                                red[i] += 1
+                    if fire_mode == "Simultaneous":
+                        # Calculate hits (Binomial distribution)
+                        blue_hits = np.zeros_like(blue)
+                        red_hits = np.zeros_like(red)
+                        
+                        for i in range(3):  # Attacker domain
+                            for j in range(3):  # Defender domain
+                                if blue[i] > 0:
+                                    p_hit = p_hit_blue[i,j] * (1 - p_int_red)
+                                    hits = np.random.binomial(blue_shots[i], p_hit)
+                                    blue_hits[j] += hits
+                                    blue_hits_by_domain[i,j] += hits
+                                if red[i] > 0:
+                                    p_hit = p_hit_red[i,j] * (1 - p_int_blue)
+                                    hits = np.random.binomial(red_shots[i], p_hit)
+                                    red_hits[j] += hits
+                                    red_hits_by_domain[i,j] += hits
+                        
+                        # Update forces
+                        blue = np.maximum(0, blue - red_hits)
+                        red = np.maximum(0, red - blue_hits)
+                        
+                    elif fire_mode == "Blue fires first":
+                        # Blue attacks Red first
+                        blue_hits = np.zeros_like(blue)
+                        for i in range(3):
+                            for j in range(3):
+                                if blue[i] > 0:
+                                    p_hit = p_hit_blue[i,j] * (1 - p_int_red)
+                                    hits = np.random.binomial(blue_shots[i], p_hit)
+                                    blue_hits[j] += hits
+                                    blue_hits_by_domain[i,j] += hits
+                        
+                        temp_red = np.maximum(0, red - blue_hits)
+                        
+                        # Red attacks Blue with reduced force
+                        red_hits = np.zeros_like(red)
+                        for i in range(3):
+                            for j in range(3):
+                                if temp_red[i] > 0:
+                                    p_hit = p_hit_red[i,j] * (1 - p_int_blue)
+                                    hits = np.random.binomial(red_shots[i], p_hit)
+                                    red_hits[j] += hits
+                                    red_hits_by_domain[i,j] += hits
+                        
+                        blue = np.maximum(0, blue - red_hits)
+                        red = temp_red
+                        
+                    else:  # Red fires first
+                        # Red attacks Blue first
+                        red_hits = np.zeros_like(red)
+                        for i in range(3):
+                            for j in range(3):
+                                if red[i] > 0:
+                                    p_hit = p_hit_red[i,j] * (1 - p_int_blue)
+                                    hits = np.random.binomial(red_shots[i], p_hit)
+                                    red_hits[j] += hits
+                                    red_hits_by_domain[i,j] += hits
+                        
+                        temp_blue = np.maximum(0, blue - red_hits)
+                        
+                        # Blue attacks Red with reduced force
+                        blue_hits = np.zeros_like(blue)
+                        for i in range(3):
+                            for j in range(3):
+                                if temp_blue[i] > 0:
+                                    p_hit = p_hit_blue[i,j] * (1 - p_int_red)
+                                    hits = np.random.binomial(blue_shots[i], p_hit)
+                                    blue_hits[j] += hits
+                                    blue_hits_by_domain[i,j] += hits
+                        
+                        blue = temp_blue
+                        red = np.maximum(0, red - blue_hits)
                     
                     # Store results
                     all_blue[sim, round + 1] = blue
